@@ -17,8 +17,13 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - run: cd smart-contracts
-      - run: npm install
-      - run: npm test
+
+      - name: Install packages
+        run: npm install
+        working-directory: smart-contracts
+
+      - name: Run Tests
+        run: npm test
+        working-directory: smart-contracts
         env:
           CI: true
