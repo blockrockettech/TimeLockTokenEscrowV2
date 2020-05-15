@@ -4,19 +4,22 @@
   "author": "BlockRocket Tech",
   "license": "MIT",
   "scripts": {
-    "test": "truffle test --network development",
+    "test": "truffle compile && npx mocha --exit --recursive",
+    "test-fast": "npx mocha --exit --recursive",
     "coverage": "truffle run coverage",
     "mythx": "truffle run mythx contracts/TimeLockTokenEscrow.sol"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/blockrockettech/TimeLockTokenEscrow.git"
+    "url": "git+https://github.com/blockrockettech/TimeLockTokenEscrowV2.git"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "^3.0.1",
+    "@openzeppelin/test-environment": "^0.1.4",
     "@openzeppelin/test-helpers": "^0.5.5",
     "@truffle/hdwallet-provider": "^1.0.35",
     "chai": "^4.2.0",
+    "mocha": "^7.1.2",
     "solidity-coverage": "^0.7.5",
     "truffle-flattener": "^1.4.4",
     "truffle-plugin-verify": "^0.3.10"
