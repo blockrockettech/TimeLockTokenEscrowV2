@@ -34,12 +34,14 @@ describe('TimeLockTokenEscrow V2 tests', function () {
     const amountToLockUp = new BN('5000');
 
     describe('lock() - Locking up tokens', function () {
+
         describe('happy path', function () {
-            it('Locks up a specified amount of tokens', async function () {
+
+            const oneHourFromNow = new BN((now() + (60 * 60)).toString());
+
+            beforeEach(async function () {
                 // Ensure timeLockTokenEscrow has no tokens
                 (await this.token.balanceOf(this.timeLockTokenEscrow.address)).should.be.bignumber.equal('0');
-
-                const oneHourFromNow = new BN((now() + (60 * 60)).toString());
 
                 const {logs} = await lockupTokens(
                     this.token,
@@ -48,8 +50,11 @@ describe('TimeLockTokenEscrow V2 tests', function () {
                     amountToLockUp,
                     oneHourFromNow
                 );
+                this.logs = logs;
+            });
 
-                await expectEvent.inLogs(logs, 'Lockup', {
+            it('Locks up a specified amount of tokens', async function () {
+                await expectEvent.inLogs(this.logs, 'Lockup', {
                     _depositId: '1',
                     _creator: creator,
                     _beneficiary: beneficiary1,
@@ -60,9 +65,26 @@ describe('TimeLockTokenEscrow V2 tests', function () {
                 // Ensure timeLockTokenEscrow has tokens
                 (await this.token.balanceOf(this.timeLockTokenEscrow.address)).should.be.bignumber.equal('5000');
             });
+
+            it('Reverse mapping setup for new deposit and beneficiary', async function () {
+                const depositIds = await this.timeLockTokenEscrow.getDepositIdsForBeneficiary(beneficiary1);
+                depositIds.should.be.lengthOf(1);
+                depositIds[0].should.be.bignumber.equal('1');
+            });
+
+            it('TimeLock data correctly set', async function () {
+                const {
+                    _creator, _amount, _lockedUntil
+                } = await this.timeLockTokenEscrow.getLockForDepositIdAndBeneficiary('1', beneficiary1);
+                _creator.should.be.equal(_creator);
+                _amount.should.be.bignumber.equal(amountToLockUp);
+                _lockedUntil.should.be.bignumber.equal(oneHourFromNow);
+            });
+
         });
 
         describe('requires', function () {
+
             it('Fails to lockup tokens for address zero', async function () {
                 await expectRevert(
                     this.timeLockTokenEscrow.lock(ZERO_ADDRESS, amountToLockUp, '0', {from: creator}),
@@ -201,5 +223,9 @@ describe('TimeLockTokenEscrow V2 tests', function () {
             });
         });
     });
+
+    // FIXME test for multiple deposits
+    // FIXME test for multiple withdrawals
+    // FIXME test for lockup time cross overs
 
 });
