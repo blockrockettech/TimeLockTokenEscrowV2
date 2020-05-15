@@ -1,0 +1,24 @@
+{
+  "name": "time-lock-token-escrow-v2",
+  "version": "1.0.0",
+  "author": "BlockRocket Tech",
+  "license": "MIT",
+  "scripts": {
+    "test": "truffle test --network development",
+    "coverage": "truffle run coverage",
+    "mythx": "truffle run mythx contracts/TimeLockTokenEscrow.sol"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blockrockettech/TimeLockTokenEscrow.git"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "^3.0.1",
+    "@openzeppelin/test-helpers": "^0.5.5",
+    "@truffle/hdwallet-provider": "^1.0.35",
+    "chai": "^4.2.0",
+    "solidity-coverage": "^0.7.5",
+    "truffle-flattener": "^1.4.4",
+    "truffle-plugin-verify": "^0.3.10"
+  }
+}
