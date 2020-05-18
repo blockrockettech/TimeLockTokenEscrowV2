@@ -32,3 +32,10 @@ $ slither /share/flat/TimeLockTokenEscrow.sol  --print human-summary
 ```
 $ slither /share/flat/TimeLockTokenEscrow.sol
 ```
+
+### Running Echidna (fuzzy testing) - WIP
+
+```
+$ cd /share/
+$ echidna-test . --contract TimeLockTokenEscrow --config echidna_config.yaml
+```

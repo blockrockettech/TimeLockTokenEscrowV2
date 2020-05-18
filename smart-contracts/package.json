@@ -14,6 +14,7 @@
     "url": "git+https://github.com/blockrockettech/TimeLockTokenEscrowV2.git"
   },
   "devDependencies": {
+    "@blockrocket/utils": "^1.0.8",
     "@openzeppelin/contracts": "^3.0.1",
     "@openzeppelin/test-environment": "^0.1.4",
     "@openzeppelin/test-helpers": "^0.5.5",
