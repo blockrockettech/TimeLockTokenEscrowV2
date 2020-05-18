@@ -9,12 +9,17 @@ const TestToken = contract.fromArtifact('TestToken');
 
 describe('TimeLockTokenEscrow V2 tests', async () => {
 
-    const [creator, beneficiary1, random] = accounts;
+    const [creator, beneficiary1, beneficiary2, random] = accounts;
 
     beforeEach(async () => {
         this.initialSupply = new BN('1000000').mul(new BN('10').pow(new BN('18')));
         this.token = await TestToken.new({from: creator});
         this.timeLockTokenEscrow = await TimeLockTokenEscrow.new(this.token.address, {from: creator});
+
+        this.now = await time.latest();
+        this.thirtyMinsFromNow = new BN(this.now.add(new BN('1800')));
+        this.oneHourFromNow = new BN(this.now.add(new BN('3600')));
+        this.twoHourFromNow = new BN(this.now.add(new BN('7200')));
     });
 
     const lockupTokens = async (beneficiary, amount, lockedUntil) => {
@@ -27,8 +32,8 @@ describe('TimeLockTokenEscrow V2 tests', async () => {
         return await this.timeLockTokenEscrow.lock(beneficiary, amount, lockedUntil, {from: creator});
     };
 
-    const validDeposit = async (id, beneficiary1, {creator, amount, lockedUntil}) => {
-        const {_creator, _amount, _lockedUntil} = await this.timeLockTokenEscrow.getLockForDepositIdAndBeneficiary(id, beneficiary1);
+    const validDeposit = async (id, beneficiary, {creator, amount, lockedUntil}) => {
+        const {_creator, _amount, _lockedUntil} = await this.timeLockTokenEscrow.getLockForDepositIdAndBeneficiary(id, beneficiary);
         _creator.should.be.equal(creator);
         _amount.should.be.bignumber.equal(amount);
         _lockedUntil.should.be.bignumber.equal(lockedUntil);
@@ -42,9 +47,6 @@ describe('TimeLockTokenEscrow V2 tests', async () => {
         describe('happy path', async () => {
 
             beforeEach(async () => {
-
-                this.oneHourFromNow = new BN(((await time.latest()) + (60 * 60)).toString());
-
                 // Ensure timeLockTokenEscrow has no tokens
                 (await this.token.balanceOf(this.timeLockTokenEscrow.address)).should.be.bignumber.equal('0');
 
@@ -106,8 +108,6 @@ describe('TimeLockTokenEscrow V2 tests', async () => {
         describe('happy path', async () => {
             it('Sends the token after the lockup period has ended', async () => {
                 // Lock up the tokens
-                this.oneHourFromNow = new BN(((await time.latest()) + (60 * 60)).toString());
-
                 await lockupTokens(
                     beneficiary1,
                     amountToLockUp,
@@ -193,10 +193,6 @@ describe('TimeLockTokenEscrow V2 tests', async () => {
     describe('allows for multiple deposits and withdrawals for a single address', async () => {
 
         beforeEach(async () => {
-            this.now = await time.latest();
-            this.oneHourFromNow = new BN(this.now.add(new BN('3600')));
-            this.twoHourFromNow = new BN(this.now.add(new BN('7200')));
-
             // Ensure timeLockTokenEscrow has no tokens
             (await this.token.balanceOf(this.timeLockTokenEscrow.address)).should.be.bignumber.equal('0');
 
@@ -306,4 +302,160 @@ describe('TimeLockTokenEscrow V2 tests', async () => {
         });
     });
 
+    describe('allows for multiple deposits and withdrawals from multiple accounts', async () => {
+
+        beforeEach(async () => {
+            // Ensure timeLockTokenEscrow has no tokens
+            (await this.token.balanceOf(this.timeLockTokenEscrow.address)).should.be.bignumber.equal('0');
+
+            // first lockup - beneficiary1
+            await lockupTokens(
+                beneficiary1,
+                amountToLockUp,
+                this.thirtyMinsFromNow
+            );
+
+            // second lockup - beneficiary2
+            await lockupTokens(
+                beneficiary2,
+                amountToLockUp,
+                this.oneHourFromNow
+            );
+
+            // third lockup - beneficiary1
+            await lockupTokens(
+                beneficiary1,
+                amountToLockUp,
+                this.twoHourFromNow
+            );
+
+            // fourth lockup - beneficiary2
+            await lockupTokens(
+                beneficiary2,
+                amountToLockUp,
+                this.twoHourFromNow
+            );
+
+            // Ensure timeLockTokenEscrow now has all 4 deposits
+            (await this.token.balanceOf(this.timeLockTokenEscrow.address)).should.be.bignumber.equal(
+                new BN(amountToLockUp).mul(new BN('4'))
+            );
+        });
+
+        it('can enumerate deposits for an beneficiary1', async () => {
+            const depositIds = await this.timeLockTokenEscrow.getDepositIdsForBeneficiary(beneficiary1);
+            depositIds.map(e => e.toString()).should.be.deep.equal(['1', '3']);
+
+            await validDeposit(depositIds[0], beneficiary1, {
+                creator: creator,
+                amount: amountToLockUp,
+                lockedUntil: this.thirtyMinsFromNow
+            });
+
+            await validDeposit(depositIds[1], beneficiary1, {
+                creator: creator,
+                amount: amountToLockUp,
+                lockedUntil: this.twoHourFromNow
+            });
+        });
+
+        it('can enumerate deposits for an beneficiary2', async () => {
+            const depositIds = await this.timeLockTokenEscrow.getDepositIdsForBeneficiary(beneficiary2);
+            depositIds.map(e => e.toString()).should.be.deep.equal(['2', '4']);
+
+            await validDeposit(depositIds[0], beneficiary2, {
+                creator: creator,
+                amount: amountToLockUp,
+                lockedUntil: this.oneHourFromNow
+            });
+
+            await validDeposit(depositIds[1], beneficiary2, {
+                creator: creator,
+                amount: amountToLockUp,
+                lockedUntil: this.twoHourFromNow
+            });
+        });
+
+        it('withdrawing each deposit', async () => {
+
+            ////////////////
+            // Drawdown 1 //
+            ////////////////
+
+            await time.increaseTo(this.thirtyMinsFromNow);
+
+            const drawdownOne = await this.timeLockTokenEscrow.withdrawal('1', beneficiary1, {from: random});
+            await expectEvent(drawdownOne, 'Withdrawal', {
+                _depositId: '1',
+                _beneficiary: beneficiary1,
+                _caller: random,
+                _amount: amountToLockUp
+            });
+
+            (await this.token.balanceOf(beneficiary1)).should.be.bignumber.equal(amountToLockUp);
+
+            ////////////////
+            // Drawdown 2 //
+            ////////////////
+
+            await time.increaseTo(this.oneHourFromNow);
+
+            const drawdownTwo = await this.timeLockTokenEscrow.withdrawal('2', beneficiary2, {from: random});
+            await expectEvent(drawdownTwo, 'Withdrawal', {
+                _depositId: '2',
+                _beneficiary: beneficiary2,
+                _caller: random,
+                _amount: amountToLockUp
+            });
+
+            (await this.token.balanceOf(beneficiary2)).should.be.bignumber.equal(amountToLockUp);
+
+            ////////////////
+            // Drawdown 3 //
+            ////////////////
+
+            await time.increaseTo(this.twoHourFromNow);
+
+            const drawdownThird = await this.timeLockTokenEscrow.withdrawal('3', beneficiary1, {from: random});
+            await expectEvent(drawdownThird, 'Withdrawal', {
+                _depositId: '3',
+                _beneficiary: beneficiary1,
+                _caller: random,
+                _amount: amountToLockUp
+            });
+
+            (await this.token.balanceOf(beneficiary1)).should.be.bignumber.equal(
+                new BN(amountToLockUp).mul(new BN('2'))
+            );
+
+            ////////////////
+            // Drawdown 4 //
+            ////////////////
+
+            const drawdownFour = await this.timeLockTokenEscrow.withdrawal('4', beneficiary2, {from: random});
+            await expectEvent(drawdownFour, 'Withdrawal', {
+                _depositId: '4',
+                _beneficiary: beneficiary2,
+                _caller: random,
+                _amount: amountToLockUp
+            });
+
+            (await this.token.balanceOf(beneficiary2)).should.be.bignumber.equal(
+                new BN(amountToLockUp).mul(new BN('2'))
+            );
+
+            // Unable to withdraw for beneficiary1
+            await expectRevert(
+                this.timeLockTokenEscrow.withdrawal('1', beneficiary1),
+                'There are no tokens locked up for this address'
+            );
+
+            // Unable to withdraw for beneficiary2
+            await expectRevert(
+                this.timeLockTokenEscrow.withdrawal('2', beneficiary1),
+                'There are no tokens locked up for this address'
+            );
+        });
+
+    });
 });
