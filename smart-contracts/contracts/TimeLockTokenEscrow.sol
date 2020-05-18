@@ -1,6 +1,6 @@
 pragma solidity ^0.6.6;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract TimeLockTokenEscrow is ReentrancyGuard {
@@ -64,10 +64,10 @@ contract TimeLockTokenEscrow is ReentrancyGuard {
             lockedUntil : _lockedUntil
             });
 
+        emit Lockup(depositIdPointer, msg.sender, _beneficiary, _amount, _lockedUntil);
+
         bool transferSuccess = token.transferFrom(msg.sender, address(this), _amount);
         require(transferSuccess, "Failed to escrow tokens into the contract");
-
-        emit Lockup(depositIdPointer, msg.sender, _beneficiary, _amount, _lockedUntil);
     }
 
     /**
@@ -83,10 +83,10 @@ contract TimeLockTokenEscrow is ReentrancyGuard {
         uint256 transferAmount = lockup.amount;
         lockup.amount = 0;
 
+        emit Withdrawal(_depositId, _beneficiary, msg.sender, transferAmount);
+
         bool transferSuccess = token.transfer(_beneficiary, transferAmount);
         require(transferSuccess, "Failed to send tokens to the beneficiary");
-
-        emit Withdrawal(_depositId, _beneficiary, msg.sender, transferAmount);
     }
 
     /**
@@ -94,7 +94,7 @@ contract TimeLockTokenEscrow is ReentrancyGuard {
      * @param _beneficiary address the beneficiary to find any deposit IDs for
      * @return depositIds uint256[] of deposit IDs for the given beneficiary
     */
-    function getDepositIdsForBeneficiary(address _beneficiary) public view returns (uint256[] memory depositIds) {
+    function getDepositIdsForBeneficiary(address _beneficiary) external view returns (uint256[] memory depositIds) {
         return beneficiaryToDepositIds[_beneficiary];
     }
 
@@ -107,7 +107,7 @@ contract TimeLockTokenEscrow is ReentrancyGuard {
      * @return _lockedUntil uint256 for when the timelock expires
     */
     function getLockForDepositIdAndBeneficiary(uint256 _depositId, address _beneficiary)
-    public view returns (address _creator, uint256 _amount, uint256 _lockedUntil) {
+    external view returns (address _creator, uint256 _amount, uint256 _lockedUntil) {
         TimeLock storage lockup = beneficiaryToTimeLock[_depositId][_beneficiary];
         return (
         lockup.creator,
