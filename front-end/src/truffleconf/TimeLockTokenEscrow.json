@@ -7767,6 +7767,81 @@
     "version": "0.6.6+commit.6c089d02.Emscripten.clang"
   },
   "networks": {
+    "4": {
+      "events": {
+        "0xd5cc234c02e8ad2404b9d1de2a7fa889e4d1f8de8f398414ae98b3569a82070b": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "_depositId",
+              "type": "uint256"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "_creator",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "_beneficiary",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "_amount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "_lockedUntil",
+              "type": "uint256"
+            }
+          ],
+          "name": "Lockup",
+          "type": "event"
+        },
+        "0xcf91346356075a3baa53cd15dff800c671dccf78e18140c685232e8ab7566592": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "_depositId",
+              "type": "uint256"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "_beneficiary",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "_caller",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "_amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "Withdrawal",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x5F19B5e33Aae1a6cb9741174F89Ef78c964Bac48",
+      "transactionHash": "0x55b28a01ff789d957d2243d0f0eead540d1eb4ab44027d49e719352223e993ca"
+    },
     "5777": {
       "events": {
         "0xd5cc234c02e8ad2404b9d1de2a7fa889e4d1f8de8f398414ae98b3569a82070b": {
@@ -7844,7 +7919,7 @@
     }
   },
   "schemaVersion": "3.1.0",
-  "updatedAt": "2020-05-20T12:17:08.367Z",
+  "updatedAt": "2020-05-20T16:36:35.220Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {

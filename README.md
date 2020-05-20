@@ -3,6 +3,12 @@ TimeLockTokenEscrowV2
 
 ![](https://github.com/blockrockettech/TimeLockTokenEscrowV2/workflows/Test%20Smart%20Contracts/badge.svg)
 
+### Deploying front-end
+
+```
+$ cd front-end;
+$ npm run deploy;
+```
 
 #### Running against slither
 
@@ -31,11 +37,4 @@ $ slither /share/flat/TimeLockTokenEscrow.sol  --print human-summary
 * Run some simple tests
 ```
 $ slither /share/flat/TimeLockTokenEscrow.sol
-```
-
-### Running Echidna (fuzzy testing) - WIP
-
-```
-$ cd /share/
-$ echidna-test . --contract TimeLockTokenEscrow --config echidna_config.yaml
 ```

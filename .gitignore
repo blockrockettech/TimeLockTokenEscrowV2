@@ -96,3 +96,4 @@ modules.xml
 # End of https://www.gitignore.io/api/intellij+all
 .DS_Store
 /smart-contracts/crytic-export/
+.firebase/hosting.ZGlzdA.cache

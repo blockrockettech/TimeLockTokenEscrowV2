@@ -1,35 +1,50 @@
 <template>
   <div class="container mt-4">
 
+
     <div class="row mt-2">
       <div class="col">
-        <h5>Unclaimed token locks for {{this.$route.params.address}}</h5>
-      </div>
-    </div>
 
-    <div class="row mt-4" v-for="deposit in deposits">
-      <div class="col float-right">
-        {{deposit.amount}} <span class="badge badge-light">XTP</span>
-      </div>
-      <div class="col">
-        {{deposit.lockedUntil}}
-      </div>
-      <div class="col">
-        <button class="btn btn-outline-primary"
-                @click="withdrawal(deposit.id)"
-                :disabled="withdrawing"
-                v-if="canWithdraw(deposit)">
-          Withdraw
-        </button>
-        <span class="text-muted" v-else>
-          Not available yet
-        </span>
-      </div>
-    </div>
+        <div class="card mx-auto">
+          <div class="card-header">
+            <h5>Unclaimed token locks for {{this.$route.params.address}}</h5>
+          </div>
 
-    <div class="row mt-4" v-if="deposits.length === 0 && !loadingLocks">
-      <div class="col">
-        <b-alert></b-alert>
+          <div class="card-body">
+
+            <div class="row mt-4 mb-4" v-for="deposit in deposits">
+              <div class="col float-right">
+                {{deposit.amount}} <span class="badge badge-light">XTP</span>
+              </div>
+              <div class="col">
+                {{deposit.lockedUntil}}
+              </div>
+              <div class="col">
+                <button class="btn btn-outline-primary"
+                        @click="withdrawal(deposit.id)"
+                        :disabled="withdrawing"
+                        v-if="canWithdraw(deposit)">
+                  Withdraw
+                </button>
+                <span class="text-muted" v-else>
+                    Not available yet
+                  </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body" v-if="deposits.length === 0 && !loadingLocks">
+            <div class="row mb-4">
+              <div class="col">
+                No locks found
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer text-right" v-if="deposits.length > 0">
+            Total unclaimed tokens: {{totalLocks}}
+          </div>
+        </div>
       </div>
 
     </div>
@@ -63,6 +78,14 @@
         },
       };
     },
+    computed: {
+      totalLocks() {
+        const totalBN = _.reduce(_.map(this.deposits, 'amountBN'), (sum, n) => {
+          return sum.add(n);
+        }, ethers.constants.Zero);
+        return ethers.utils.formatUnits(totalBN, '18');
+      }
+    },
     methods: {
       async withdrawal(depositId) {
         try {
@@ -90,6 +113,7 @@
           return {
             id: depositId,
             _creator: _creator,
+            amountBN: _amount,
             amount: ethers.utils.formatUnits(_amount, '18'),
             lockedUntil: this.$moment.unix(_lockedUntil.toString()),
           };
@@ -120,7 +144,6 @@
       );
 
       this.loadAccountLocks();
-
     },
   };
 </script>
