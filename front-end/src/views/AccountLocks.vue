@@ -142,9 +142,9 @@
         }
       },
       canWithdraw(deposit) {
-        if (_.toLower(this.web3.loggedInAddress) !== _.toLower(this.$route.params.address)) {
-          return false;
-        }
+        // if (_.toLower(this.web3.loggedInAddress) !== _.toLower(this.$route.params.address)) {
+        //   return false;
+        // }
         return deposit.lockedUntil.isBefore(new Date());
       },
       etherscanLink(transactionHash) {
