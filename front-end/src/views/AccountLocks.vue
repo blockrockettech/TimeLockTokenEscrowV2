@@ -24,7 +24,7 @@
                   Withdraw
                 </button>
                 <span class="text-muted" v-else>
-                    Not available yet
+                    Not available
                   </span>
               </div>
             </div>
@@ -121,10 +121,9 @@
         return ethers.utils.formatUnits(totalBN, '18');
       },
       totalClaimed() {
-        const totalBN = _.reduce(_.map(this.withdrawals, 'amount'), (sum, n) => {
+        return _.reduce(_.map(this.withdrawals, 'amount'), (sum, n) => {
           return _.toNumber(sum) + _.toNumber(n);
         }, 0);
-        return totalBN;
       }
     },
     methods: {
@@ -143,6 +142,9 @@
         }
       },
       canWithdraw(deposit) {
+        if (_.toLower(this.web3.loggedInAddress) !== _.toLower(this.$route.params.address)) {
+          return false;
+        }
         return deposit.lockedUntil.isBefore(new Date());
       },
       etherscanLink(transactionHash) {
@@ -197,6 +199,7 @@
       await window.ethereum.enable();
       this.web3.provider = new ethers.providers.Web3Provider(web3.currentProvider);
       this.web3.signer = this.web3.provider.getSigner();
+      this.web3.loggedInAddress = await this.web3.provider.getSigner().getAddress();
       this.web3.chain = await this.web3.provider.getNetwork();
 
       const escrowContractAddress = utils.getContractAddressFromTruffleConf(TimeLockTokenEscrow, this.web3.chain.chainId);
