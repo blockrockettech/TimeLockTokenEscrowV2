@@ -13,7 +13,9 @@
                      id="inputBeneficiary"
                      class="ml-2 form-control fixed-width-input d-inline-block"
                      placeholder="0x123..."
+                     @change="resolveBeneficiaryEns"
                      v-model="form.beneficiary"/>
+              <div class="text-muted small">{{form.beneficiaryEns}}</div>
             </div>
             <div class="mt-1">
               <label class="fixed-width-label text-right" for="inputAmount">Amount: </label>
@@ -60,6 +62,8 @@
         lockingUp: false,
         form: {
           beneficiary: '',
+          beneficiaryEns: '',
+          amount: '',
         },
         web3: {
           provider: null,
@@ -71,6 +75,20 @@
       };
     },
     methods: {
+      async resolveBeneficiaryEns() {
+        if (this.form.beneficiary) {
+          const homesteadProvider = ethers.getDefaultProvider("homestead");
+
+          if (this.form.beneficiary.indexOf('.eth') !== -1) {
+            // We have an ens already so store it and lookup the eth address
+            this.form.beneficiaryEns = this.form.beneficiary;
+            this.form.beneficiary = await homesteadProvider.resolveName(this.form.beneficiaryEns);
+          } else {
+            // Reverse lookup ens name
+            this.form.beneficiaryEns = await homesteadProvider.lookupAddress(this.form.beneficiary);
+          }
+        }
+      },
       async lockupTokens() {
         try {
           this.lockingUp = true;

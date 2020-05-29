@@ -6,7 +6,10 @@
 
         <div class="card mx-auto">
           <div class="card-header">
-            <h5>Unclaimed token locks for {{this.$route.params.address}}</h5>
+            <h5>Unclaimed token locks for
+              <span v-if="ens">{{ens}}</span>
+              <span v-else>{{this.$route.params.address}}</span>
+            </h5>
           </div>
           <div class="card-body">
             <div class="row mt-4 mb-4" v-for="deposit in deposits">
@@ -50,7 +53,10 @@
 
         <div class="card mx-auto">
           <div class="card-header">
-            <h5>Withdrawal history for {{this.$route.params.address}}</h5>
+            <h5>Withdrawal history for
+              <span v-if="ens">{{ens}}</span>
+              <span v-else>{{this.$route.params.address}}</span>
+            </h5>
           </div>
 
           <div class="card-body">
@@ -111,6 +117,7 @@
           escrowContract: null,
           genericERC20TokenContract: null
         },
+        ens: null
       };
     },
     computed: {
@@ -152,9 +159,9 @@
       },
       async loadAccountLocks() {
         this.loadingLocks = true;
-        const depositIds = await this.web3.escrowContract.getDepositIdsForBeneficiary(this.$route.params.address);
+        const depositIds = await this.web3.escrowContract.getDepositIdsForBeneficiary(this.ethAddress);
         const deposits = await Promise.all(depositIds.map(async (depositId) => {
-          const {_amount, _creator, _lockedUntil} = await this.web3.escrowContract.getLockForDepositIdAndBeneficiary(depositId, this.$route.params.address);
+          const {_amount, _creator, _lockedUntil} = await this.web3.escrowContract.getLockForDepositIdAndBeneficiary(depositId, this.ethAddress);
           return {
             id: depositId,
             _creator: _creator,
@@ -168,7 +175,7 @@
       },
       async loadAccountHistory() {
         this.loadingHistory = true;
-        const filter = this.web3.escrowContract.filters.Withdrawal(null, this.$route.params.address, null, null);
+        const filter = this.web3.escrowContract.filters.Withdrawal(null, this.ethAddress, null, null);
         filter.fromBlock = 0;
         filter.toBlock = 'latest';
 
@@ -215,6 +222,18 @@
         TestToken.abi,
         this.web3.signer
       );
+
+      const homesteadProvider = ethers.getDefaultProvider("homestead");
+
+      if (this.$route.params.address.indexOf('.eth') !== -1) {
+        // We have an ens already so store it and lookup the eth address
+        this.ens = this.$route.params.address;
+        this.ethAddress = await homesteadProvider.resolveName(this.ens);
+      } else {
+        // Reverse lookup ens name
+        this.ens = await homesteadProvider.lookupAddress(this.$route.params.address);
+        this.ethAddress = this.$route.params.address;
+      }
 
       this.loadAccountLocks();
       this.loadAccountHistory();
